@@ -1,0 +1,131 @@
+---
+title: "Index Swapping Assignment"
+subtitle: "BI 622"
+author: "Nicki Zavoshy"
+date: "9/13/2017"
+
+output: pdf_document
+---
+
+####Part 1: Generate	per	base	call	distribution	of	quality	scores	for	read1,	read2,	index1,	and	index2. Next,	average	the	Quality	scores	for	each	read	(for	each	of	the	four	files) and	plot frequency	of	the	Quality	Scores.
+
+- Read 1 Plots
+```{r echo=FALSE, fig.align='center'}
+R1<- read.table('qscore_basepair_R1.tsv',sep = ',')
+R1<-t(R1)
+R1_qdist<-read.table('qscore_count_R1.tsv')
+par(mfrow=c(1,2))
+plot(R1, xlab='Base Pair Position', ylab='Average Quality Score', main='Average Quality Score per Base Pair position of Reads', pch=17,col='#c76a61',cex.main=0.7)
+plot(R1_qdist$V1, log2(R1_qdist$V2), ylab='Count occurence(log2)', xlab='Average Quality Score of Read', main='Occurence of Qualtiy Score for all Reads',pch=8,col='#2b5a9b',cex.main=0.7)
+```
+
+- Read 2 Plots
+
+```{r echo=FALSE, fig.align='center'}
+#calculating the freq vs basepair
+R2<- read.table('qscore_basepair_R2.tsv',sep = ',')
+R2<-t(R2)
+R2_qdist<-read.table('qscore_count_R2.tsv')
+par(mfrow=c(1,2))
+plot(R2, xlab='Base Pair Position', ylab='Average Quality Score', main='Average Quality Score per Base Pair position of Reads', pch=17,col='#9f8c92',cex.main=0.7)
+plot(R2_qdist$V1, log2(R2_qdist$V2), ylab='Count occurence(log2)', xlab='Average Quality Score of Read', main='Occurence of Qualtiy Score for all Reads',pch=8,col='#9f47b7',cex.main=0.7)
+
+
+```
+
+-Read 3 Plots
+```{r echo=FALSE, fig.align='center'}
+R3<- read.table('qscore_basepair_R3.tsv',sep = ',')
+R3<-t(R3)
+R3_qdist<-read.table('qscore_count_R3.tsv')
+par(mfrow=c(1,2))
+plot(R3[1:8,], xlab='Base Pair Position', ylab='Average Quality Score', main='Average Quality Score per Base Pair position of Reads',pch=17,col='#506b71',cex.main=0.7)
+plot(R3_qdist$V1, log2(R3_qdist$V2), ylab='Count occurence', xlab='Average Quality Score of Read', main='Occurence of Qualtiy Score for all Reads',pch=8,col='#95a841',cex.main=0.7)
+```
+
+-Read 4 Plots
+```{r echo=FALSE, fig.align='center'}
+R4<- read.table('qscore_basepair_R4.tsv',sep = ',')
+R4<-t(R4)
+R4_qdist<-read.table('qscore_count_R4.tsv')
+par(mfrow=c(1,2))
+plot(R4, xlab='Base Pair Position', ylab='Average Quality Score', main='Average Quality Score per Base Pair position of Reads', pch=17,col='#ba8040',cex.main=0.7)
+plot(R4_qdist$V1, log2(R4_qdist$V2), ylab='Count occurence', xlab='Average Quality Score of Read', main='Occurence of Qualtiy Score for all Reads',pch=8,col='#757bad',cex.main=0.8)
+```
+
+- What	is	a	good	quality	score	cutoff for	index	reads	and	pairs	to utilize	for	sample identification	and	downstream	analysis,	respectively?
+
+    - For the index reads, ~30 seems like it would be a good quality score cut off. There is a considerable spike in prevelance of the occurance of quality scores over 30, so any higher and we would be losing a significant amount of the data in both sample identification and downstream sample analysis. For R4, I think a cut off of around 20 would probably be better because there are a significant amount of reads that have a score lower than 30. Discarding too many reads could lose a significant amount of samples that might not have sequenced as well.For R1, I would also probably use a cutoff of 20 because that seems to be the inflection point of the data. 
+
+- How	many	indexes	have	Undetermined	(N)	base	calls? (Utilize	your	command	line	tool	knowledge.	Summit	the	command	you	used.	CHALLENGE: use	a	one line command)   
+
+   - grep tool used `cat 1294_S1_L008_R2_001.fastq | grep -A 1 "^@K00337" | grep -v "^@" | grep -v "^--" | grep 'N' | wc -l`
+
+    - For R2: 3,976,613 indexes have an undetermine base call. 
+    For R3: 3,328,051 indexes have an undetermine base call. 
+
+- What	do	the	averaged	Quality	Scores	across	the reads	tell	you?	Interpret	your	data specifically
+
+    - The average quality score across all the reads gives us a relatively good indication of where the median quality score is for all of the reads. While it doesn't give us a good understanding of the temporal aspect of read qualtiy increasing, it does show that the reads get better over time and end up being, on average, of pretty good quality. For my data, we can see that it peaks somewhere around 38 for both R2 and R3, which are the index pairs. For R4, the peak is at around 40 which is a good sign that the reads are of high quality. The same pattern holds true for R1. Of note in R4 is the sharp drop off of counts below 20, which is very intersting to me, since that pattern isn't mimicked in R1. 
+
+####Part 2: Write	a	program	to	de-multiplex	the	samples	and	document	index	swapping and number	of	reads	retained	per	sample
+
+- How	many	reads	are	retained	for	each	expected	index	pair?	What	is	the	percentage?
+ 
+```{r echo=FALSE}
+
+known<- read.table('qfilter_known_index.txt')
+colnames(known)<-c('Expected Index Pair','Occurences')
+known$Percentage<-known$Occurences/363246735*100
+
+
+library(knitr)
+kable(known)
+
+```
+    
+    
+
+- Approximately 62% of all of the reads generated from this sample, after being quality filtered so that every nucleotide of both indexes had a quality score >= 30, were retained from known index pairs. Approximately 1.5% of the reads that passed the quality filter did not align to a known and intended index pairs, and could be the consequence of index swapping or sequencing error. 
+    
+    
+
+- How	many	reads	are	indicative	of	index	swapping?
+
+```{r echo=F, fig.align='center', results='hide'}
+
+unknown<-read.table('qfilter_unknown_index.txt')
+colnames(unknown)<-c('Expected Index Pair','Occurences')
+#unknown$Percentage<-unknown$Occurences/363246735*100
+
+combos<-read.table('combos6.txt', sep=',')
+combos<-as.data.frame(t(combos))
+colnames(combos)<-'Expected Index Pair'
+done<-merge(combos,unknown, by = 'Expected Index Pair')
+sum(done$Occurences)
+
+#library(knitr)
+help("legend")
+```
+    
+    - There are 179,624 reads that have been indicated as potential index swaps. 
+    
+
+- Create	a	distribution	of	swapped	indexes.	What	does	this	histogram	tell you/what	is	your	interpretation	of	this	data?
+```{r echo=FALSE, fig.align='center', fig.width=8}
+library(RColorBrewer)
+cols<-colorRampPalette(brewer.pal(n=12,name='Set3'))(276)
+cols_oc<-cols[done$`Expected Index Pair`]
+par(mfrow=c(1,1))
+barplot(log2(done$Occurences), col =cols_oc, ylab='Occurences of index swapping(log2)', main='Indexes identified as "hopping" (n=276)',xlab='Each bar represents a possible index pair(n=276)')
+
+```
+
+   - The histogram tells us that every single one of 276 possible swapped index combinations were found in our generated data. I am shocked by this information, because I didn't think that we would see all of the index combinations possible. I thought maybe there would be one or two index pairs that swapped but not all of them. Even though this only represents ~0.08% of our data, this is still an issue that should be considered during downstream analysis.There are some spikes in the data which indicate sequences that more likely to incur index swapping. There are a couple index pairs that swapped more frequently than the others, with the highest occurence being of `TATGGCAC_TGTTCCGT` despite the fact that `TATGGCAC` index pair was only represented in ~2% of the reads and `TGTTCCGT` was only represented in ~3% of reads. The levenshtein distance is 6 between these two sequences, and so that indicates to me that it cannot be blamed on sequencing error alone and likely swapping has occurred.  
+    
+    
+    
+    
+    
+    
+    
